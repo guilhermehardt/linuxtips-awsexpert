@@ -4,7 +4,7 @@ Parameters:
   UserName:
     Description: "The user name"
     Type: String
-    Default: "Operations"
+    Default: "operations"
 Resources:
   user:
     Type: "AWS::IAM::User"
@@ -25,7 +25,6 @@ Resources:
       GroupName: !Sub "${UserName}-${AWS::Region}"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/PowerUserAccess"
-      
 Outputs:
   accessKey:
     Description: "AWS_ACCESS_KEY_ID"

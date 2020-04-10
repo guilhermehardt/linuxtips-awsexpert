@@ -28,7 +28,6 @@ Parameters:
   SSHSourceIP:
     Description: 'Your source IP'
     Type: String
-    Default: "181.221.4.18/32"
   KeyPairName:
     Description: 'Your keypair name'
     Type: String

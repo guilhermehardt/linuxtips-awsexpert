@@ -1,0 +1,12 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Operations user"
+Parameters:
+  BucketName:
+    Description: "The bucket name"
+    Type: String
+    Default: "s3-cloudformation-recipes-giropops-2020"
+Resources:  
+  s3Cloudformation:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName

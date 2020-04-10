@@ -11,7 +11,7 @@ Parameters:
   Environment:
     Description: 'The environment name'
     Type: String
-    Default: "Giropops"
+    Default: "giropops"
   NetworkCIDR:
     Description: 'Class B of VPC (10.XXX.0.0/16)'
     Type: Number
