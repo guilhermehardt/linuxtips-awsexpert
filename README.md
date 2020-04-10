@@ -15,9 +15,9 @@ $ export AWS_ACCESS_KEY_ID={}
 $ export AWS_SECRET_ACCESS_KEY={}
 $ export AWS_DEFAULT_REGION=us-east-2
 # Exporte seu IP public
-export SSH_SOURCE_IP=$(curl ifconfig.me)
+$ export SSH_SOURCE_IP=$(curl ifconfig.me)
 # Exporte o nome da sua Key Pair
-export KEY_PAIR_NAME={O NOME DA SUA KEYPAIR AQUI}
+$ export KEY_PAIR_NAME={O NOME DA SUA KEYPAIR AQUI}
 ```
 Copie os templates para um bucket S3
 ```bash
@@ -46,7 +46,7 @@ $ aws cloudformation create-stack \
   "https://s3.amazonaws.com/s3-cloudformation-recipes-giropops-2020/vpc.yaml" --stack-name "giropops-vpc" \
   --capabilities CAPABILITY_NAMED_IAM
 # EC2
-aws cloudformation create-stack \
+$ aws cloudformation create-stack \
   --template-url \
   "https://s3.amazonaws.com/s3-cloudformation-recipes-giropops-2020/vpc.yaml" --stack-name "giropops-ec2" \
   --parameter ParameterKey=SSHSourceIP,ParameterValue="${SSH_SOURCE_IP}/32" \
