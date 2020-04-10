@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Operations user"
+Parameters:
+  UserName:
+    Description: "The user name"
+    Type: String
+    Default: "Operations"
+Resources:
+  user:
+    Type: "AWS::IAM::User"
+    Properties:
+      UserName: !Sub "${UserName}-${AWS::Region}"
+  accessKey:
+    Type: "AWS::IAM::AccessKey"
+    Properties:
+      UserName: !Ref user
+  userGroup:
+    Type: "AWS::IAM::UserToGroupAddition"
+    Properties:
+      GroupName: !Sub "${UserName}-${AWS::Region}"
+      Users: [!Ref "user"]
+  group:
+    Type: "AWS::IAM::Group"
+    Properties:
+      GroupName: !Sub "${UserName}-${AWS::Region}"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/PowerUserAccess"
+      
+Outputs:
+  accessKey:
+    Description: "AWS_ACCESS_KEY_ID"
+    Value: !Ref accessKey
+  secretKey:
+    Description: "AWS_SECRET_ACCESS_KEY"
+    Value: !GetAtt [accessKey, SecretAccessKey]

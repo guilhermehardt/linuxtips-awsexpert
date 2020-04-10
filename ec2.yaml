@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS Config
+Parameters:
+  Environment:
+    Description: 'The environment name'
+    Type: String
+    Default: "giropops"
+  VPCStack:
+    Description: 'Stack name of VPC stack based'
+    Type: String
+    Default: 'giropops-vpc'
+  InstanceType:
+    Description: 'The type of EC2 instance to launch'
+    Type: String
+    Default: t2.micro
+  SubnetNamePrv:
+    Description: 'Subnet name of parent VPC stack based'
+    Type: String
+    Default: SubnetAPrivate
+    AllowedValues:
+      - SubnetAPrivate
+  SubnetNamePb:
+    Description: 'Subnet name of parent VPC stack based'
+    Type: String
+    Default: SubnetAPublic
+    AllowedValues:
+      - SubnetAPublic
+  SSHSourceIP:
+    Description: 'Your source IP'
+    Type: String
+    Default: "181.221.4.18/32"
+  KeyPairName:
+    Description: 'Your keypair name'
+    Type: String
+    Default: "giropops-kp"
+Resources:
+  # Database Resources
+  dbInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub 'db.${Environment}-${AWS::Region}'
+      GroupDescription: !Sub 'db.${Environment}-${AWS::Region}'
+      VpcId:
+        'Fn::ImportValue': !Sub '${VPCStack}-VPC'
+      Tags:
+        - Key: Name
+          Value: !Sub 'db.${Environment}-${AWS::Region}'
+  dbInstanceSGIn:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref dbInstanceSG
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      CidrIp:
+        'Fn::ImportValue': !Sub '${VPCStack}-NetworkCIDR'
+  dbInstanceSGInSSH:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref dbInstanceSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: !Ref SSHSourceIP
+  dbInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: ami-0fc20dd1da406780b
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref dbInstanceSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${VPCStack}-${SubnetNamePrv}'
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        apt update && apt install -y curl wget
+        curl -fsSL https://get.docker.com | bash
+        docker swarm init
+        docker service create --name my_postgres -p 5432:5432 postgres:11
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-dbInstance-1
+  dbInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: ami-0fc20dd1da406780b
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref dbInstanceSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${VPCStack}-${SubnetNamePrv}'
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        apt update && apt install -y curl wget
+        curl -fsSL https://get.docker.com | bash
+        docker swarm init
+        docker service create --name my_postgres -p 5432:5432 postgres:11
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-dbInstance-2
+  # Webserver Resources
+  nginxInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub 'nginx.${Environment}-${AWS::Region}'
+      GroupDescription: !Sub 'nginx.${Environment}-${AWS::Region}'
+      VpcId:
+        'Fn::ImportValue': !Sub '${VPCStack}-VPC'
+      Tags:
+        - Key: Name
+          Value: !Sub 'nginx.${Environment}-${AWS::Region}'
+  nginxInstanceSGInHTTP:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref nginxInstanceSG
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: "0.0.0.0/0"
+  nginxInstanceSGInHTTPS:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref nginxInstanceSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: "0.0.0.0/0"
+  nginxInstanceSGInSSH:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref nginxInstanceSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: !Ref SSHSourceIP
+  nginxInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: ami-0fc20dd1da406780b
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref nginxInstanceSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${VPCStack}-${SubnetNamePb}'
+      Monitoring: true
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        apt update && apt install -y curl wget
+        curl -fsSL https://get.docker.com | bash
+        docker swarm init
+        docker service create --name nginx -p 80:80 nginx
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-nginxInstance-1
+  nginxInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: ami-0fc20dd1da406780b
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref nginxInstanceSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${VPCStack}-${SubnetNamePb}'
+      Monitoring: true
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        apt update && apt install -y curl wget
+        curl -fsSL https://get.docker.com | bash
+        docker swarm init
+        docker service create --name nginx -p 80:80 nginx
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-nginxInstance-2

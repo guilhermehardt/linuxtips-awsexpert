@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  BucketName:
+    Description: "The bucket name"
+    Type: String
+    Default: "s3-cloudtrail-giropops-2020"
+Resources: 
+  trail: 
+    Type: "AWS::CloudTrail::Trail"
+    Properties: 
+      S3BucketName: !Ref s3BucketTrail
+      IsLogging: true
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+    DependsOn:
+    - s3BucketTrailPolicy
+  s3BucketTrail:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+  s3BucketTrailPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref s3BucketTrail
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AWSCloudTrailList
+          Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action:
+            - "s3:ListBucket"
+            - "s3:GetBucketAcl"
+          Resource: !Sub 'arn:aws:s3:::${BucketName}'
+        - Sid: AWSCloudTrailFullAccess
+          Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action:
+            - "s3:DeleteObject"
+            - "s3:GetObject"
+            - "s3:PutObject"
+          Resource: !Sub 'arn:aws:s3:::${BucketName}/*'
+  trailLog:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: "7"
+  trailLogRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: CloudTrailAssumeRole
+          Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: 'cloudtrail-policy'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: LogFullAccess
+            Effect: Allow
+            Action: 'logs:*'
+            Resource: !GetAtt 'trailLog.Arn'
